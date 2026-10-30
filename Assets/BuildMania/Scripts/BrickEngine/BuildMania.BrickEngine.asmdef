@@ -1,0 +1,14 @@
+{
+    "name": "BuildMania.BrickEngine",
+    "rootNamespace": "BuildMania.Bricks",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da68cb7a1b778cb44b1727e6e948f461, type: 3}
+  m_Name: wheel
+  m_EditorClassIdentifier: BuildMania.BrickEngine::BuildMania.Bricks.BrickDefinition
+  id: wheel
+  displayName: Wheel
+  size: {x: 1, y: 5, z: 2}
+  shape: 2
+  connectors:
+  - kind: 3
+    halfPosition: {x: -1, y: 5, z: 1}
+    facing: 3
+  - kind: 3
+    halfPosition: {x: 1, y: 5, z: 1}
+    facing: 2
+  prefab: {fileID: 5982667200378633316, guid: ebb5b42920a8aec49a8b76688f3eaabf, type: 3}

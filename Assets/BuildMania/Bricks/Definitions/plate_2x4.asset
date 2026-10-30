@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da68cb7a1b778cb44b1727e6e948f461, type: 3}
+  m_Name: plate_2x4
+  m_EditorClassIdentifier: BuildMania.BrickEngine::BuildMania.Bricks.BrickDefinition
+  id: plate_2x4
+  displayName: Plate 2x4
+  size: {x: 2, y: 1, z: 4}
+  shape: 0
+  connectors:
+  - kind: 0
+    halfPosition: {x: 0, y: 2, z: 0}
+    facing: 0
+  - kind: 0
+    halfPosition: {x: 0, y: 2, z: 2}
+    facing: 0
+  - kind: 0
+    halfPosition: {x: 0, y: 2, z: 4}
+    facing: 0
+  - kind: 0
+    halfPosition: {x: 0, y: 2, z: 6}
+    facing: 0
+  - kind: 0
+    halfPosition: {x: 2, y: 2, z: 0}
+    facing: 0
+  - kind: 0
+    halfPosition: {x: 2, y: 2, z: 2}
+    facing: 0
+  - kind: 0
+    halfPosition: {x: 2, y: 2, z: 4}
+    facing: 0
+  - kind: 0
+    halfPosition: {x: 2, y: 2, z: 6}
+    facing: 0
+  - kind: 1
+    halfPosition: {x: 0, y: 0, z: 0}
+    facing: 1
+  - kind: 1
+    halfPosition: {x: 0, y: 0, z: 2}
+    facing: 1
+  - kind: 1
+    halfPosition: {x: 0, y: 0, z: 4}
+    facing: 1
+  - kind: 1
+    halfPosition: {x: 0, y: 0, z: 6}
+    facing: 1
+  - kind: 1
+    halfPosition: {x: 2, y: 0, z: 0}
+    facing: 1
+  - kind: 1
+    halfPosition: {x: 2, y: 0, z: 2}
+    facing: 1
+  - kind: 1
+    halfPosition: {x: 2, y: 0, z: 4}
+    facing: 1
+  - kind: 1
+    halfPosition: {x: 2, y: 0, z: 6}
+    facing: 1
+  prefab: {fileID: 7155607239171562589, guid: 4a9f07ba9063cf4419d0a659acba4db3, type: 3}

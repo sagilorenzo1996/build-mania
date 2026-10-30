@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 58a84c785475a8140986d34e0d97616a, type: 3}
+  m_Name: RealisticPalette
+  m_EditorClassIdentifier: BuildMania.BrickEngine::BuildMania.Bricks.BrickPalette
+  materials:
+  - {fileID: 2100000, guid: 6ad3f04e529c6334894e47675e73048f, type: 2}
+  - {fileID: 2100000, guid: 53c9d5873d215ac4abd0370bb4d21ce8, type: 2}
+  - {fileID: 2100000, guid: 2c6097516ace67a4d93d15ad7cc40c17, type: 2}
+  - {fileID: 2100000, guid: 045273ee2f1b27547944962f5a1589db, type: 2}
+  - {fileID: 2100000, guid: a06c0d98ec13f484a9fbc66c925a7047, type: 2}
+  - {fileID: 2100000, guid: d5db3d0f6ed2f9d4992b468599695201, type: 2}
+  - {fileID: 2100000, guid: 2cff891990fc26e49af85511e20dc3c7, type: 2}
+  - {fileID: 2100000, guid: 01396fd2839e7dc449cfc005f4893a07, type: 2}
