@@ -116,7 +116,7 @@ namespace BuildMania.Interaction
             switch (best)
             {
                 case TraySlot slot:
-                    Hold(slot.Definition, area.SelectedColor, Relative(grab, slot.DisplayPose));
+                    Hold(slot.Definition, slot.ColorIndex, Relative(grab, slot.DisplayPose));
                     input.Pulse(0.3f, 0.04f);
                     break;
                 case BrickInstance brick:

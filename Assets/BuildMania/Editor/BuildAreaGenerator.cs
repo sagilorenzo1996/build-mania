@@ -1,3 +1,4 @@
+using BuildMania.App;
 using BuildMania.Bricks;
 using BuildMania.Interaction;
 using UnityEditor;
@@ -9,7 +10,7 @@ namespace BuildMania.EditorTools
 {
     /// <summary>
     /// Generates the portable build area prefab: a 16x16 baseplate with the brick tray,
-    /// colour swatches, undo/redo buttons and two carry handles in front of it.
+    /// colour swatches, undo/redo buttons, the menu and two carry handles in front of it.
     /// The player stands on the -Z side; the prefab origin is the centre of the baseplate surface.
     /// </summary>
     public static class BuildAreaGenerator
@@ -19,13 +20,14 @@ namespace BuildMania.EditorTools
         const string CatalogPath = "Assets/BuildMania/Bricks/StarterBricks.asset";
         const string PalettePath = "Assets/BuildMania/Materials/Realistic/RealisticPalette.asset";
         const string GhostMaterialPath = "Assets/BuildMania/Materials/SnapGhost.mat";
+        const string HintMaterialPath = "Assets/BuildMania/Materials/TargetHint.mat";
 
         const int BaseplateStuds = 16;
         const float P = BrickGrid.Pitch;
         const float H = BrickGrid.PlateHeight;
 
         // Tray layout, in studs from the baseplate centre (negative Z is towards the player).
-        const float TrayNear = -14.75f;
+        const float TrayNear = -15.25f;
         const float TrayFar = -8.5f;
         const float RowA = -9.75f;
         const float RowB = -12.25f;
@@ -43,7 +45,8 @@ namespace BuildMania.EditorTools
 
             var catalog = AssetDatabase.LoadAssetAtPath<BrickCatalog>(CatalogPath);
             var palette = AssetDatabase.LoadAssetAtPath<BrickPalette>(PalettePath);
-            var ghost = GenerateGhostMaterial();
+            var ghost = GenerateTransparentMaterial(GhostMaterialPath, new Color(0.55f, 0.9f, 1f, 0.45f));
+            var hint = GenerateTransparentMaterial(HintMaterialPath, new Color(1f, 0.85f, 0.3f, 0.35f));
 
             var root = new GameObject("BuildArea");
             try
@@ -56,6 +59,10 @@ namespace BuildMania.EditorTools
                 AddVisual(grid, "Baseplate", Vector3.zero, SaveMesh(BaseplateMesh(), "baseplate_16x16"), palette.Get(Green));
 
                 BuildTray(root.transform, area, catalog, palette);
+                MenuGenerator.AddMenu(root.transform, palette,
+                    titlePosition: new Vector3(0f, 0.2f, (BaseplateStuds * 0.5f + 0.75f) * P), titleSize: new Vector2(15f * P, 1.4f * P),
+                    menuButtonPosition: new Vector3(7f * P, 0f, RowB * P),
+                    gridOrigin: new Vector3(0f, 0f, RowA * P), cellSize: new Vector2(7.8f * P, 2f * P));
 
                 foreach (var side in new[] { -1f, 1f })
                 {
@@ -69,7 +76,7 @@ namespace BuildMania.EditorTools
                     handle.gameObject.AddComponent<AreaHandle>().Configure(area);
                 }
 
-                SetFields(area, ("assemblyView", view), ("palette", palette), ("ghostMaterial", ghost));
+                SetFields(area, ("assemblyView", view), ("palette", palette), ("ghostMaterial", ghost), ("hintMaterial", hint));
                 var prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
                 Debug.Log($"Build Mania: build area prefab written to {PrefabPath}.");
                 return prefab;
@@ -98,8 +105,8 @@ namespace BuildMania.EditorTools
             AddSlot(tray, area, catalog, AxlePlate2x2, -3f, RowB, 0f);
             AddSlot(tray, area, catalog, Wheel, -0.5f, RowB, 0f);
 
-            AddHistoryButton(tray, area, palette, HistoryButton.Kind.Undo, 3f);
-            AddHistoryButton(tray, area, palette, HistoryButton.Kind.Redo, 6.25f);
+            AddHistoryButton(tray, area, palette, HistoryButton.Kind.Undo, 2.25f);
+            AddHistoryButton(tray, area, palette, HistoryButton.Kind.Redo, 4.75f);
 
             // Each colour tile sits on a white frame so dark colours still stand out from the tray.
             const float frameHeight = 0.2f * H;
@@ -137,7 +144,7 @@ namespace BuildMania.EditorTools
 
         static void AddHistoryButton(Transform tray, BuildArea area, BrickPalette palette, HistoryButton.Kind kind, float x)
         {
-            const float size = 2.2f * P;
+            const float size = 2f * P;
             const float baseHeight = 0.6f * H;
             var button = Child(tray, kind.ToString(), new Vector3(x * P, 0f, RowB * P));
 
@@ -193,17 +200,17 @@ namespace BuildMania.EditorTools
             return builder.ToMesh("button_arrow");
         }
 
-        static Material GenerateGhostMaterial()
+        /// <summary>URP Unlit, transparent with alpha blending.</summary>
+        static Material GenerateTransparentMaterial(string path, Color colour)
         {
-            var material = AssetDatabase.LoadAssetAtPath<Material>(GhostMaterialPath);
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material == null)
             {
                 material = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
-                AssetDatabase.CreateAsset(material, GhostMaterialPath);
+                AssetDatabase.CreateAsset(material, path);
             }
 
-            // URP Unlit, transparent with alpha blending.
-            material.SetColor("_BaseColor", new Color(0.55f, 0.9f, 1f, 0.45f));
+            material.SetColor("_BaseColor", colour);
             material.SetFloat("_Surface", 1f);
             material.SetFloat("_Blend", 0f);
             material.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
@@ -218,7 +225,7 @@ namespace BuildMania.EditorTools
             return material;
         }
 
-        static Transform Child(Transform parent, string name, Vector3 localPosition)
+        internal static Transform Child(Transform parent, string name, Vector3 localPosition)
         {
             var child = new GameObject(name).transform;
             child.SetParent(parent, false);
@@ -226,7 +233,7 @@ namespace BuildMania.EditorTools
             return child;
         }
 
-        static Transform AddVisual(Transform parent, string name, Vector3 localPosition, Mesh mesh, Material material)
+        internal static Transform AddVisual(Transform parent, string name, Vector3 localPosition, Mesh mesh, Material material)
         {
             var visual = Child(parent, name, localPosition);
             visual.gameObject.AddComponent<MeshFilter>().sharedMesh = mesh;
@@ -234,7 +241,7 @@ namespace BuildMania.EditorTools
             return visual;
         }
 
-        static Mesh SaveMesh(Mesh mesh, string name)
+        internal static Mesh SaveMesh(Mesh mesh, string name)
         {
             var path = $"{MeshesFolder}/{name}.asset";
             var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
@@ -250,12 +257,13 @@ namespace BuildMania.EditorTools
             return existing;
         }
 
-        static void SetFields(Object target, params (string name, object value)[] fields)
+        internal static void SetFields(Object target, params (string name, object value)[] fields)
         {
             var serialized = new SerializedObject(target);
             foreach (var (name, value) in fields)
             {
-                var property = serialized.FindProperty(name);
+                var property = serialized.FindProperty(name)
+                    ?? throw new System.ArgumentException($"{target.GetType().Name} has no serialized field '{name}'.");
                 switch (value)
                 {
                     case Object reference:
@@ -263,6 +271,12 @@ namespace BuildMania.EditorTools
                         break;
                     case Vector2Int vector:
                         property.vector2IntValue = vector;
+                        break;
+                    case Vector2 vector:
+                        property.vector2Value = vector;
+                        break;
+                    case int number:
+                        property.intValue = number;
                         break;
                     case bool flag:
                         property.boolValue = flag;

@@ -36,10 +36,25 @@ namespace BuildMania.Bricks
                     origin + GridRotation.Rotate(connector.HalfPosition, Rotation),
                     connector.Facing.Rotate(Rotation));
         }
+
+        /// <summary>
+        /// True when both placements put the same brick type in the same space with the same
+        /// connectors, even if their anchor and rotation differ (a 2x2 brick turned half a turn).
+        /// Colour is ignored.
+        /// </summary>
+        public bool IsEquivalentTo(in BrickPlacement other)
+        {
+            if (Definition == null || other.Definition == null || Definition.Id != other.Definition.Id)
+                return false;
+            if (Position == other.Position && Rotation == other.Rotation)
+                return true;
+            return new HashSet<Vector3Int>(Cells()).SetEquals(other.Cells())
+                && new HashSet<WorldConnector>(Connectors()).SetEquals(other.Connectors());
+        }
     }
 
     /// <summary>A connector in assembly space, in half-cell units.</summary>
-    public readonly struct WorldConnector
+    public readonly struct WorldConnector : System.IEquatable<WorldConnector>
     {
         public WorldConnector(ConnectorKind kind, Vector3Int halfPosition, Facing facing)
         {
@@ -56,6 +71,13 @@ namespace BuildMania.Bricks
             other.HalfPosition == HalfPosition &&
             other.Facing == Facing.Opposite() &&
             BrickConnector.KindsMate(Kind, other.Kind);
+
+        public bool Equals(WorldConnector other) =>
+            Kind == other.Kind && HalfPosition == other.HalfPosition && Facing == other.Facing;
+
+        public override bool Equals(object obj) => obj is WorldConnector other && Equals(other);
+
+        public override int GetHashCode() => System.HashCode.Combine((int)Kind, HalfPosition, (int)Facing);
     }
 
     /// <summary>A brick that is part of an assembly.</summary>

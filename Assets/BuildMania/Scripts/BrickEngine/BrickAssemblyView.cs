@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -22,20 +23,26 @@ namespace BuildMania.Bricks
         public BrickAssembly Assembly { get; private set; }
         public BuildHistory History { get; private set; }
 
-        void Awake()
-        {
-            Assembly = new BrickAssembly(baseplateSize);
-            History = new BuildHistory(Assembly, undoLimit);
-            Assembly.BrickAdded += Spawn;
-            Assembly.BrickRemoved += Despawn;
-        }
+        /// <summary>Extra rule for snapping, for example only the targets of a guided step. Null allows any valid spot.</summary>
+        public Func<BrickPlacement, bool> PlacementFilter { get; set; }
 
-        void OnDestroy()
+        /// <summary>Raised after <see cref="ResetAssembly"/> replaces the assembly and history.</summary>
+        public event Action AssemblyReset;
+
+        void Awake() => CreateAssembly(baseplateSize);
+
+        void OnDestroy() => ReleaseAssembly();
+
+        /// <summary>Empties the build and starts a new one. A zero baseplate makes a free-standing build.</summary>
+        public void ResetAssembly(Vector2Int baseplate)
         {
-            if (Assembly == null)
-                return;
-            Assembly.BrickAdded -= Spawn;
-            Assembly.BrickRemoved -= Despawn;
+            ReleaseAssembly();
+            foreach (var instance in instances.Values)
+                if (instance != null)
+                    Destroy(instance);
+            instances.Clear();
+            CreateAssembly(baseplate);
+            AssemblyReset?.Invoke();
         }
 
         /// <summary>Nearest valid placement for a brick held at this world pose.</summary>
@@ -43,7 +50,8 @@ namespace BuildMania.Bricks
         {
             var localPosition = transform.InverseTransformPoint(worldPosition);
             var rotation = GridRotation.FromRotation(Quaternion.Inverse(transform.rotation) * worldRotation);
-            return BrickSnapper.TryFindPlacement(Assembly, definition, localPosition, rotation, out snap, snapDistance);
+            return BrickSnapper.TryFindPlacement(Assembly, definition, localPosition, rotation, out snap, snapDistance,
+                accept: PlacementFilter);
         }
 
         /// <summary>Snaps and places a brick released at this world pose. Undoable.</summary>
@@ -63,6 +71,23 @@ namespace BuildMania.Bricks
             transform.rotation * GridRotation.ToQuaternion(rotation));
 
         public bool TryGetInstance(int brickId, out GameObject instance) => instances.TryGetValue(brickId, out instance);
+
+        void CreateAssembly(Vector2Int baseplate)
+        {
+            baseplateSize = baseplate;
+            Assembly = new BrickAssembly(baseplate);
+            History = new BuildHistory(Assembly, undoLimit);
+            Assembly.BrickAdded += Spawn;
+            Assembly.BrickRemoved += Despawn;
+        }
+
+        void ReleaseAssembly()
+        {
+            if (Assembly == null)
+                return;
+            Assembly.BrickAdded -= Spawn;
+            Assembly.BrickRemoved -= Despawn;
+        }
 
         void Spawn(PlacedBrick brick)
         {

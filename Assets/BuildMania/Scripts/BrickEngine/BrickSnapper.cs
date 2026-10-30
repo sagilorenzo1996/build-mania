@@ -23,6 +23,7 @@ namespace BuildMania.Bricks
         /// <param name="localPosition">Brick pivot in assembly space, in metres.</param>
         /// <param name="rotation">Quarter turns about the vertical axis.</param>
         /// <param name="maxDistance">Furthest the brick may jump to snap, in metres.</param>
+        /// <param name="accept">Optional extra rule, for example only the targets of a guided build step.</param>
         public static bool TryFindPlacement(
             BrickAssembly assembly,
             BrickDefinition definition,
@@ -31,7 +32,8 @@ namespace BuildMania.Bricks
             out SnapResult result,
             float maxDistance = BrickGrid.Pitch,
             int horizontalRadius = 1,
-            int verticalRadius = BrickGrid.PlatesPerBrick)
+            int verticalRadius = BrickGrid.PlatesPerBrick,
+            System.Func<BrickPlacement, bool> accept = null)
         {
             result = default;
             var cell = BrickGrid.LocalToCell(localPosition);
@@ -47,7 +49,10 @@ namespace BuildMania.Bricks
                 var distance = Vector3.Distance(BrickGrid.CellToLocal(candidate), localPosition);
                 if (distance > maxDistance || distance >= bestDistance)
                     continue;
-                if (assembly.CheckPlacement(new BrickPlacement(definition, candidate, rotation)) != PlacementResult.Ok)
+                var placement = new BrickPlacement(definition, candidate, rotation);
+                if (assembly.CheckPlacement(placement) != PlacementResult.Ok)
+                    continue;
+                if (accept != null && !accept(placement))
                     continue;
 
                 bestDistance = distance;

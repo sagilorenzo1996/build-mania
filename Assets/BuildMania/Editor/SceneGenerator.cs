@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using BuildMania.App;
+using BuildMania.Bricks;
+using BuildMania.Content;
 using BuildMania.Interaction;
 using BuildMania.XR;
 using UnityEditor;
@@ -9,7 +12,8 @@ using UnityEngine.Rendering;
 namespace BuildMania.EditorTools
 {
     /// <summary>
-    /// Generates the playable scenes and the Meta project settings they need:
+    /// Generates the playable scenes and the Meta project settings they need. Both scenes run
+    /// the same step flow (Garage, Guided Build, Free Build, Play) on the build area:
     /// <list type="bullet">
     /// <item>MRBuild: passthrough mixed reality; the build area appears in front of you and can be carried to any table.</item>
     /// <item>VRWorkshop: the same building on a virtual workbench, and the fallback when passthrough is unavailable.</item>
@@ -34,12 +38,13 @@ namespace BuildMania.EditorTools
         [MenuItem("Build Mania/Generate Scenes")]
         public static void GenerateScenes()
         {
+            var models = ContentGenerator.EnsureModelCatalog();
             var areaPrefab = BuildAreaGenerator.GenerateBuildAreaPrefab();
             BuildAreaGenerator.EnsureFolder(ScenesFolder);
             ConfigureMetaProject();
 
-            CreateMixedRealityScene(areaPrefab);
-            CreateWorkshopScene(areaPrefab);
+            CreateMixedRealityScene(areaPrefab, models);
+            CreateWorkshopScene(areaPrefab, models);
 
             EditorBuildSettings.scenes = new[]
             {
@@ -66,7 +71,7 @@ namespace BuildMania.EditorTools
             OVRProjectConfig.CommitProjectConfig(config);
         }
 
-        static void CreateMixedRealityScene(GameObject areaPrefab)
+        static void CreateMixedRealityScene(GameObject areaPrefab, ModelCatalog models)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             RenderSettings.skybox = null;
@@ -74,14 +79,15 @@ namespace BuildMania.EditorTools
             RenderSettings.ambientLight = new Color(0.55f, 0.55f, 0.58f);
             AddSunlight();
 
-            var area = InstantiateArea(areaPrefab, new Vector3(0f, 0.8f, 0.75f), placeInFrontOfViewer: true);
+            var area = InstantiateArea(areaPrefab, new Vector3(0f, 0.8f, 0.85f), placeInFrontOfViewer: true);
             CreateRig(area, passthrough: true);
+            CreateAppFlow(area, models);
             new GameObject("Passthrough Fallback").AddComponent<PassthroughFallback>();
 
             EditorSceneManager.SaveScene(scene, MixedRealityScenePath);
         }
 
-        static void CreateWorkshopScene(GameObject areaPrefab)
+        static void CreateWorkshopScene(GameObject areaPrefab, ModelCatalog models)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             RenderSettings.skybox = AssetDatabase.GetBuiltinExtraResource<Material>("Default-Skybox.mat");
@@ -89,11 +95,20 @@ namespace BuildMania.EditorTools
             AddSunlight();
             BuildWorkshop();
 
-            // Baseplate resting on the table, tray edge about 25 cm in front of the player.
-            var area = InstantiateArea(areaPrefab, new Vector3(0f, TableHeight + Bricks.BrickGrid.PlateHeight, 0.84f), placeInFrontOfViewer: false);
+            // Baseplate resting on the table, tray edge about 20 cm in front of the player.
+            var area = InstantiateArea(areaPrefab, new Vector3(0f, TableHeight + BrickGrid.PlateHeight, 0.87f), placeInFrontOfViewer: false);
             CreateRig(area, passthrough: false);
+            CreateAppFlow(area, models);
 
             EditorSceneManager.SaveScene(scene, WorkshopScenePath);
+        }
+
+        static void CreateAppFlow(BuildArea area, ModelCatalog models)
+        {
+            var bricks = AssetDatabase.LoadAssetAtPath<BrickCatalog>("Assets/BuildMania/Bricks/StarterBricks.asset");
+            var flow = new GameObject("App Flow").AddComponent<AppFlow>();
+            BuildAreaGenerator.SetFields(flow,
+                ("area", area), ("models", models), ("bricks", bricks), ("menu", area.GetComponentInChildren<MenuPanel>(true)));
         }
 
         static BuildArea InstantiateArea(GameObject areaPrefab, Vector3 position, bool placeInFrontOfViewer)

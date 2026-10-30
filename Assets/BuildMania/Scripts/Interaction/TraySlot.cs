@@ -4,8 +4,8 @@ using UnityEngine;
 namespace BuildMania.Interaction
 {
     /// <summary>
-    /// A tray compartment showing one brick type in the selected colour.
-    /// Grabbing it hands the player a new brick of that type.
+    /// A tray compartment showing one brick type. Grabbing it hands the player a new brick
+    /// of that type, in the selected colour or in the colour a guided step asks for.
     /// </summary>
     public sealed class TraySlot : MonoBehaviour
     {
@@ -15,8 +15,12 @@ namespace BuildMania.Interaction
         [SerializeField] BuildArea area;
 
         GameObject display;
+        int? colourOverride;
 
         public BrickDefinition Definition => definition;
+
+        /// <summary>Colour of the brick this slot hands out.</summary>
+        public int ColorIndex => colourOverride ?? (area != null ? area.SelectedColor : 0);
 
         /// <summary>World pose of the displayed brick's pivot, where a new brick appears when taken.</summary>
         public Pose DisplayPose => display != null
@@ -27,6 +31,13 @@ namespace BuildMania.Interaction
         {
             definition = brick;
             area = owner;
+        }
+
+        /// <summary>Fixes the colour (guided build), or null to follow the selected colour.</summary>
+        public void SetColourOverride(int? colorIndex)
+        {
+            colourOverride = colorIndex;
+            Recolour();
         }
 
         void Start()
@@ -50,21 +61,21 @@ namespace BuildMania.Interaction
             grabCollider.size = bounds.size + Vector3.one * ColliderMargin;
 
             if (area != null)
-            {
-                area.SelectedColorChanged += Recolour;
-                Recolour(area.SelectedColor);
-            }
+                area.SelectedColorChanged += OnSelectedColourChanged;
+            Recolour();
         }
 
         void OnDestroy()
         {
             if (area != null)
-                area.SelectedColorChanged -= Recolour;
+                area.SelectedColorChanged -= OnSelectedColourChanged;
         }
 
-        void Recolour(int colorIndex)
+        void OnSelectedColourChanged(int _) => Recolour();
+
+        void Recolour()
         {
-            var material = area.MaterialFor(colorIndex);
+            var material = area != null ? area.MaterialFor(ColorIndex) : null;
             if (display == null || material == null)
                 return;
             foreach (var displayRenderer in display.GetComponentsInChildren<MeshRenderer>())

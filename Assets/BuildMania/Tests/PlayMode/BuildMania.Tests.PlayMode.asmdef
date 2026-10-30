@@ -4,6 +4,9 @@
     "references": [
         "BuildMania.BrickEngine",
         "BuildMania.Interaction",
+        "BuildMania.App",
+        "BuildMania.Content",
+        "BuildMania.BuildingEngine",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

@@ -1,26 +1,31 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using BuildMania.Bricks;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace BuildMania.Interaction
 {
     /// <summary>
     /// A portable building station: the baseplate with its assembly, the brick tray and the
     /// colour selection. The whole station can be carried to any table by its handles.
+    /// App steps decide what it offers: which bricks the tray shows, which spots accept a
+    /// brick, and which hint ghosts show where bricks go.
     /// </summary>
     public sealed class BuildArea : MonoBehaviour
     {
         [SerializeField] BrickAssemblyView assemblyView;
         [SerializeField] BrickPalette palette;
         [SerializeField] Material ghostMaterial;
+        [SerializeField] Material hintMaterial;
         [SerializeField] int selectedColor = 1;
 
         [Header("Start position")]
         [Tooltip("Move in front of the viewer once head tracking starts. Off when the area sits on a fixed table.")]
         [SerializeField] bool placeInFrontOfViewer = true;
         [Tooltip("Horizontal distance from the eyes to the baseplate centre, in metres. The tray sits nearer.")]
-        [SerializeField] float viewerDistance = 0.75f;
+        [SerializeField] float viewerDistance = 0.85f;
         [Tooltip("How far below eye level the area sits, in metres.")]
         [SerializeField] float viewerDrop = 0.45f;
 
@@ -49,6 +54,96 @@ namespace BuildMania.Interaction
         }
 
         public event Action<int> SelectedColorChanged;
+
+        readonly List<GameObject> hints = new();
+        TraySlot[] traySlots;
+        ColorSwatch[] swatches;
+        HistoryButton[] historyButtons;
+
+        public IReadOnlyList<TraySlot> TraySlots => traySlots;
+
+        /// <summary>Extra rule for where bricks may snap, for example a guided step's targets. Null allows any valid spot.</summary>
+        public Func<BrickPlacement, bool> PlacementFilter
+        {
+            get => assemblyView.PlacementFilter;
+            set => assemblyView.PlacementFilter = value;
+        }
+
+        void Awake()
+        {
+            traySlots = GetComponentsInChildren<TraySlot>(true);
+            swatches = GetComponentsInChildren<ColorSwatch>(true);
+            historyButtons = GetComponentsInChildren<HistoryButton>(true);
+        }
+
+        /// <summary>
+        /// Shows every tray brick in the selected colour, or, given <paramref name="onlyBricks"/>
+        /// (brick id to colour), just those bricks in those colours.
+        /// </summary>
+        public void ShowTray(IReadOnlyDictionary<string, int> onlyBricks = null)
+        {
+            foreach (var slot in traySlots)
+            {
+                if (onlyBricks == null)
+                {
+                    slot.gameObject.SetActive(true);
+                    slot.SetColourOverride(null);
+                }
+                else
+                {
+                    var wanted = onlyBricks.TryGetValue(slot.Definition.Id, out var colour);
+                    slot.gameObject.SetActive(wanted);
+                    slot.SetColourOverride(wanted ? colour : null);
+                }
+            }
+        }
+
+        public void HideTray()
+        {
+            foreach (var slot in traySlots)
+                slot.gameObject.SetActive(false);
+        }
+
+        public void SetSwatchesVisible(bool visible)
+        {
+            foreach (var swatch in swatches)
+                swatch.gameObject.SetActive(visible);
+        }
+
+        public void SetHistoryButtonsVisible(bool visible)
+        {
+            foreach (var button in historyButtons)
+                button.gameObject.SetActive(visible);
+        }
+
+        /// <summary>Shows see-through hint bricks where the given placements go.</summary>
+        public void ShowHints(IEnumerable<BrickPlacement> placements)
+        {
+            ClearHints();
+            foreach (var placement in placements)
+            {
+                var source = placement.Definition.Prefab != null ? placement.Definition.Prefab.GetComponent<MeshFilter>() : null;
+                if (source == null)
+                    continue;
+                var hint = new GameObject($"Hint {placement.Definition.Id}");
+                hint.transform.SetParent(assemblyView.transform, false);
+                hint.transform.SetLocalPositionAndRotation(
+                    BrickGrid.CellToLocal(placement.Position), GridRotation.ToQuaternion(placement.Rotation));
+                hint.AddComponent<MeshFilter>().sharedMesh = source.sharedMesh;
+                var hintRenderer = hint.AddComponent<MeshRenderer>();
+                hintRenderer.sharedMaterial = hintMaterial != null ? hintMaterial : ghostMaterial;
+                hintRenderer.shadowCastingMode = ShadowCastingMode.Off;
+                hints.Add(hint);
+            }
+        }
+
+        public void ClearHints()
+        {
+            foreach (var hint in hints)
+                if (hint != null)
+                    Destroy(hint);
+            hints.Clear();
+        }
 
         IEnumerator Start()
         {

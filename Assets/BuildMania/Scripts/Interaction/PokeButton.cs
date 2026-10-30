@@ -22,6 +22,10 @@ namespace BuildMania.Interaction
 
         protected abstract void OnPressed();
 
+        // A button that appears under a finger (for example a new menu page) waits for the
+        // finger to leave before it can be pressed, so one touch never presses twice.
+        void OnEnable() => touched = true;
+
         void Update()
         {
             BrickHand toucher = null;

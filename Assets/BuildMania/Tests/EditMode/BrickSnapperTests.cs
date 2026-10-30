@@ -40,6 +40,20 @@ namespace BuildMania.Tests
             Assert.That(BrickSnapper.TryFindPlacement(assembly, Def(Brick2x2), held, 0, out _), Is.False);
         }
 
+        [Test]
+        public void AcceptFilter_OnlySnapsToAllowedPlacements()
+        {
+            var assembly = new BrickAssembly(new Vector2Int(8, 8));
+            var held = BrickGrid.CellToLocal(new Vector3Int(2, 0, 3)) + SmallOffset;
+            var allowed = new Vector3Int(3, 0, 3);
+
+            Assert.That(BrickSnapper.TryFindPlacement(assembly, Def(Brick2x2), held, 0, out var snap,
+                accept: p => p.Position == allowed), Is.True);
+            Assert.That(snap.Position, Is.EqualTo(allowed));
+            Assert.That(BrickSnapper.TryFindPlacement(assembly, Def(Brick2x2), held, 0, out _,
+                accept: p => p.Position == new Vector3Int(6, 0, 6)), Is.False, "allowed spot is out of reach");
+        }
+
         [TestCase(10f, 80f, -5f, 1)]
         [TestCase(0f, -100f, 0f, 3)]
         [TestCase(0f, 179f, 0f, 2)]
